@@ -41,8 +41,11 @@ jobs:
                Usa los existentes cuando apliquen; si ninguno encaja bien, crea uno
                nuevo con `gh label create` (nombre corto en minúsculas, ej. gameplay,
                ui, rendering, controls) y luego asígnalo.
-            4. Publica UN comentario en español con `gh issue comment` que contenga un
-               diagnóstico general estructurado:
+            4. Publica UN comentario en español con `gh issue comment`. El comentario
+               DEBE estar escrito en formato Markdown válido que GitHub pueda renderizar
+               correctamente (usa encabezados `##`, negritas `**...**`, listas con `-`,
+               bloques de código con ``` y `código en línea` cuando cites funciones o
+               archivos). Debe contener un diagnóstico general estructurado:
                  - **Resumen**: qué se pide / qué falla.
                  - **Causa probable / área del código**: apunta a game.js y a las
                    funciones/estado relevantes (collide, spawn, clearLines, loop, etc.).
