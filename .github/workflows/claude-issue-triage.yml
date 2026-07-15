@@ -1,0 +1,54 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  triage:
+    # Salvaguarda anti-bucle: no correr si el actor es un bot.
+    # issues:edited no se dispara por comentarios ni cambios de labels,
+    # y la instrucción de no editar cuerpo/título cierra el otro camino.
+    if: github.event.sender.type != 'Bot'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write        # necesario para poner labels, crear labels y comentar
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Issue Triage
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: '--allowed-tools "Bash(gh label list:*),Bash(gh label create:*),Bash(gh issue view:*),Bash(gh issue edit:*),Bash(gh issue comment:*)"'
+          prompt: |
+            Eres el sistema de triage de issues del repositorio ${{ github.repository }}
+            (un Tetris en vanilla JS; ver CLAUDE.md para arquitectura).
+
+            Analiza el issue #${{ github.event.issue.number }}:
+            - Título: ${{ github.event.issue.title }}
+
+            Tareas:
+            1. Lee el cuerpo del issue con `gh issue view ${{ github.event.issue.number }}`.
+            2. Revisa los labels disponibles con `gh label list`.
+            3. Asigna al issue los labels apropiados con
+               `gh issue edit ${{ github.event.issue.number }} --add-label "..."`.
+               Usa los existentes cuando apliquen; si ninguno encaja bien, crea uno
+               nuevo con `gh label create` (nombre corto en minúsculas, ej. gameplay,
+               ui, rendering, controls) y luego asígnalo.
+            4. Publica UN comentario en español con `gh issue comment` que contenga un
+               diagnóstico general estructurado:
+                 - **Resumen**: qué se pide / qué falla.
+                 - **Causa probable / área del código**: apunta a game.js y a las
+                   funciones/estado relevantes (collide, spawn, clearLines, loop, etc.).
+                 - **Enfoque de solución sugerido**: pasos de alto nivel para implementar
+                   el fix o la feature.
+                 - **Riesgos / cosas a cuidar**: p.ej. el gotcha de las dimensiones del
+                   canvas hard-codeadas en index.html.
+            5. NO edites el título ni el cuerpo del issue (solo labels y comentario),
+               para no re-disparar este workflow.
