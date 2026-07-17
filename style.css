@@ -144,6 +144,25 @@ body {
   letter-spacing: 1px;
 }
 
+.skin-select {
+  background: var(--kbd-bg);
+  color: var(--text);
+  border: 1px solid var(--kbd-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background 0.15s;
+}
+
+.skin-select:hover,
+.skin-select:focus {
+  background: var(--btn-bg);
+  color: var(--btn-text);
+}
+
 #next-canvas {
   display: block;
   border: 1px solid var(--board-border);
