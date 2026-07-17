@@ -231,3 +231,143 @@ kbd {
 #restart-btn:hover {
   background: var(--btn-hover);
 }
+
+.start-title {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 8px;
+  color: var(--title-color);
+  text-shadow: 0 0 20px var(--title-shadow);
+}
+
+#play-btn {
+  margin-top: 4px;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border: none;
+  border-radius: 6px;
+  padding: 10px 28px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: background 0.15s;
+}
+
+#play-btn:hover {
+  background: var(--btn-hover);
+}
+
+/* ---- Records ---- */
+.records-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 280px;
+}
+
+.records-section.hidden {
+  display: none;
+}
+
+.records-table {
+  border-collapse: collapse;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.records-table th,
+.records-table td {
+  padding: 4px 8px;
+  text-align: center;
+}
+
+.records-table th {
+  color: var(--label-color);
+  font-size: 10px;
+  letter-spacing: 1px;
+  border-bottom: 1px solid var(--board-border);
+}
+
+.records-table td {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.records-table tr.highlight td {
+  color: var(--value-color);
+  font-weight: 700;
+}
+
+.records-table .no-records {
+  color: var(--control-text);
+  font-family: inherit;
+  padding: 10px;
+}
+
+.records-summary {
+  font-size: 11px;
+  color: var(--control-text);
+}
+
+.reset-records-btn {
+  background: transparent;
+  color: var(--control-text);
+  border: 1px solid var(--kbd-border);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 11px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.reset-records-btn:hover {
+  background: var(--kbd-bg);
+  color: var(--text);
+}
+
+/* ---- Name entry (game over) ---- */
+.name-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.name-entry.hidden {
+  display: none;
+}
+
+.name-entry-label {
+  font-size: 12px;
+  color: var(--overlay-score);
+}
+
+#name-input {
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 13px;
+  text-align: center;
+  width: 160px;
+}
+
+#name-submit-btn {
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background 0.15s;
+}
+
+#name-submit-btn:hover {
+  background: var(--btn-hover);
+}
