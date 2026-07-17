@@ -42,11 +42,21 @@ const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 const themeToggleBtn = document.getElementById('theme-toggle');
+const startScreen = document.getElementById('start-screen');
+const playBtn = document.getElementById('play-btn');
+const startRecordsEl = document.getElementById('start-records');
+const overlayRecordsEl = document.getElementById('overlay-records');
+const overlayNameEntry = document.getElementById('overlay-name-entry');
+const nameInput = document.getElementById('name-input');
+const nameSubmitBtn = document.getElementById('name-submit-btn');
 
 const THEME_STORAGE_KEY = 'tetris-theme';
+const RECORDS_STORAGE_KEY = 'tetris-records';
+const MAX_RECORDS = 5;
 const GRID_COLORS = { dark: '#22222e', light: '#d8d8e8' };
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, theme;
+let comboCurrent, comboBest;
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -110,11 +120,15 @@ function clearLines() {
     }
   }
   if (cleared) {
+    comboCurrent++;
+    if (comboCurrent > comboBest) comboBest = comboCurrent;
     lines += cleared;
     score += (LINE_SCORES[cleared] || 0) * level;
     level = Math.floor(lines / 10) + 1;
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
     updateHUD();
+  } else {
+    comboCurrent = 0;
   }
 }
 
@@ -171,6 +185,85 @@ function applyTheme(newTheme) {
     draw();
     drawNext();
   }
+}
+
+function loadRecords() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(RECORDS_STORAGE_KEY));
+    return Array.isArray(raw) ? raw : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveRecords(records) {
+  localStorage.setItem(RECORDS_STORAGE_KEY, JSON.stringify(records));
+}
+
+function qualifiesForRecords(candidateScore) {
+  const records = loadRecords();
+  if (records.length < MAX_RECORDS) return true;
+  return candidateScore > records[records.length - 1].score;
+}
+
+function insertRecord(name) {
+  const records = loadRecords();
+  const record = { name, score, lines, combo: comboBest };
+  records.push(record);
+  records.sort((a, b) => b.score - a.score);
+  const top = records.slice(0, MAX_RECORDS);
+  saveRecords(top);
+  return top.indexOf(record);
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function recordsHTML(highlightIdx) {
+  const records = loadRecords();
+  if (!records.length) {
+    return `
+      <table class="records-table">
+        <thead><tr><th>#</th><th>Nombre</th><th>Puntuación</th><th>Líneas</th><th>Combo</th></tr></thead>
+        <tbody><tr><td colspan="5" class="no-records">Sin records aún</td></tr></tbody>
+      </table>
+      <button class="reset-records-btn">Resetear records</button>
+    `;
+  }
+  const bestCombo = Math.max(...records.map(r => r.combo || 0));
+  const maxLines = Math.max(...records.map(r => r.lines || 0));
+  const rows = records.map((r, i) => `
+    <tr class="${i === highlightIdx ? 'highlight' : ''}">
+      <td>${i + 1}</td>
+      <td>${escapeHtml(r.name)}</td>
+      <td>${r.score.toLocaleString()}</td>
+      <td>${r.lines}</td>
+      <td>${r.combo}</td>
+    </tr>`).join('');
+  return `
+    <table class="records-table">
+      <thead><tr><th>#</th><th>Nombre</th><th>Puntuación</th><th>Líneas</th><th>Combo</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <p class="records-summary">Mejor combo: ${bestCombo} · Más líneas: ${maxLines}</p>
+    <button class="reset-records-btn">Resetear records</button>
+  `;
+}
+
+function renderAllRecords(highlightIdx) {
+  startRecordsEl.innerHTML = recordsHTML(highlightIdx);
+  overlayRecordsEl.innerHTML = recordsHTML(highlightIdx);
+}
+
+function submitRecordName() {
+  if (overlayNameEntry.classList.contains('hidden')) return;
+  const name = nameInput.value.trim() || 'Jugador';
+  const idx = insertRecord(name);
+  overlayNameEntry.classList.add('hidden');
+  renderAllRecords(idx);
 }
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
@@ -240,6 +333,15 @@ function endGame() {
   cancelAnimationFrame(animId);
   overlayTitle.textContent = 'GAME OVER';
   overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
+  overlayRecordsEl.classList.remove('hidden');
+  if (qualifiesForRecords(score)) {
+    nameInput.value = '';
+    overlayNameEntry.classList.remove('hidden');
+    nameInput.focus();
+  } else {
+    overlayNameEntry.classList.add('hidden');
+  }
+  renderAllRecords();
   overlay.classList.remove('hidden');
 }
 
@@ -253,6 +355,8 @@ function togglePause() {
     cancelAnimationFrame(animId);
     overlayTitle.textContent = 'PAUSA';
     overlayScore.textContent = '';
+    overlayNameEntry.classList.add('hidden');
+    overlayRecordsEl.classList.add('hidden');
     overlay.classList.remove('hidden');
   }
 }
@@ -282,6 +386,8 @@ function init() {
   level = 1;
   paused = false;
   gameOver = false;
+  comboCurrent = 0;
+  comboBest = 0;
   dropInterval = 1000;
   dropAccum = 0;
   lastTime = performance.now();
@@ -289,11 +395,14 @@ function init() {
   spawn();
   updateHUD();
   overlay.classList.add('hidden');
+  overlayNameEntry.classList.add('hidden');
+  overlayRecordsEl.classList.add('hidden');
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
 
 document.addEventListener('keydown', e => {
+  if (!current) return;
   if (e.code === 'KeyP') { togglePause(); return; }
   if (paused || gameOver) return;
   switch (e.code) {
@@ -324,5 +433,22 @@ themeToggleBtn.addEventListener('click', () => {
   applyTheme(theme === 'light' ? 'dark' : 'light');
 });
 
+playBtn.addEventListener('click', () => {
+  startScreen.classList.add('hidden');
+  init();
+});
+
+nameSubmitBtn.addEventListener('click', submitRecordName);
+nameInput.addEventListener('keydown', e => {
+  if (e.code === 'Enter') submitRecordName();
+});
+
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('reset-records-btn')) {
+    localStorage.removeItem(RECORDS_STORAGE_KEY);
+    renderAllRecords();
+  }
+});
+
 applyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
-init();
+renderAllRecords();
